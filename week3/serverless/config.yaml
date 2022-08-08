@@ -1,0 +1,10 @@
+region: us-west-2
+
+function_name: news_classifier
+handler: service.handler
+description: Lambda for the Refuel API backend
+runtime: python3.8
+role: lambda_role
+
+timeout: 300
+memory_size: 4096

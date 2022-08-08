@@ -138,7 +138,7 @@ def predict(request: PredictRequest):
         }
         3. Construct an instance of `PredictResponse` and return
     """
-    response = PredictResponse(scores={}, label="")
+    response = PredictResponse(scores={"key1": 0.9, "key2": 0.1}, label="key1")
     return response
 
 
