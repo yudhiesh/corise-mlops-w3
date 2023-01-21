@@ -12,7 +12,11 @@ In the project this week, we will focus on model deployment for the news classif
 
 ### Download the instructions & starter code:
 
-You can download the starter code from: https://corise-mlops.s3.us-west-2.amazonaws.com/project3/starter.zip. After downloading and unzipping the week 3 starter code, your directory structure should look like this:
+To get the starter code, you can clone and checkout the Github repo: https://github.com/nihit/corise-mlops. 
+
+Alternatively, you can download the starter code from: https://corise-mlops.s3.us-west-2.amazonaws.com/project3/starter.zip. 
+
+After downloading and unzipping the week 3 starter code, your directory structure should look like this:
 
 ```
 project
@@ -23,11 +27,13 @@ project
 |   __init__.py
 └───app
 │   │   server.py
+|   |   classifier.py
 │   │   __init__.py
 |
 └───data
     │   news_classifier.joblib
     |   logs.out
+    |   requests.json
 ```
 
 Go to the `project` directory from the command line. This will be the home directory for your project. All command line commands that follow are from this directory.
@@ -93,7 +99,7 @@ When you go to `http://127.0.0.1:8000` from a web browser, you should see this t
 ![](https://corise-mlops.s3.us-west-2.amazonaws.com/project3/pic1.png)
 
 
-2. We are now ready to get started on writing the code! All the required code changes for this project are in `app/server.py`. Comments in this file will help you understand the changes we need to make to create our web application to make model predictions. Once the code changes are done, you can start the web server again using the command from the above step.
+2. We are now ready to get started on writing the code! All the required code changes for this project are in `app/server.py` and `app/classifier.py`. Comments in this file will help you understand the changes we need to make to create our web application to make model predictions. Once the code changes are done, you can start the web server again using the command from the above step.
 
 3. Test with an example request:
 
@@ -138,7 +144,7 @@ $ docker build --platform linux/amd64 -t news-classifier .
 
 ```bash
 
-$ docker run -p 80:80 news-classifier-w3
+$ docker run -p 80:80 news-classifier
 ```
 
 3. Test the Docker container with an example request:
@@ -162,7 +168,7 @@ $ curl -X 'POST' \
 
 ```
 
-## [Step 4] Local testing & examining logs
+## [Step 4] Examining logs
 
 1. Find out the container id of the running container:
 ```bash
@@ -172,8 +178,8 @@ $ docker ps
 This will return a response like the following:
 ```bash
 
-CONTAINER ID   IMAGE                COMMAND                  CREATED         STATUS         PORTS                NAMES
-3a45c7f7661c   news-classifier-w3   "uvicorn server:app …"   4 minutes ago   Up 4 minutes   0.0.0.0:80->80/tcp   happy_burnell
+CONTAINER ID   IMAGE             COMMAND                  CREATED          STATUS          PORTS                NAMES
+b8cca8bdfe95   news-classifier   "uvicorn server:app …"   47 seconds ago   Up 46 seconds   0.0.0.0:80->80/tcp   busy_merkle
 ```
 
 2. SSH into the container using the container id from above: 
@@ -188,7 +194,7 @@ $ docker exec -it <container id> /bin/sh
 $ tail -f ../data/logs.out
 ```
 
-4. Now when you send any request to the web server (from the browser, or another tab in the command line), you can see the log output coming through in `logs.out`. Test the web server with these requests and make sure you can see the outputs in `logs.out`:
+4. Now when you send any request to the web server (from the browser, or another tab in the command line), you can see the log output coming through in `logs.out`. As an example, you can test the web server with this requests and make sure you can see the outputs in `logs.out`:
 
 ```bash
 {
@@ -199,52 +205,16 @@ $ tail -f ../data/logs.out
 }
 ```
 
-```bash
-{
-  "source": "Yahoo World",
-  "url": "http://us.rd.yahoo.com/dailynews/rss/world/*http://story.news.yahoo.com/news?tmpl=story2u=/nm/20050104/bs_nm/markets_stocks_us_europe_dc",
-  "title": "Wall Street Set to Open Firmer (Reuters)",
-  "description": "Reuters - Wall Street was set to start higher on\Tuesday to recoup some of the prior session's losses, though high-profile retailer Amazon.com  may come under\pressure after a broker downgrade."
-}
-```
+## [Step 5] End-to-end local testing
 
-```bash
-{
-  "source": "New York Times",
-  "url": "",
-  "title": "Weis chooses not to make pickoff",
-  "description": "Bill Belichick won't have to worry about Charlie Weis raiding his coaching staff for Notre Dame. But we'll have to see whether new Miami Dolphins coach Nick Saban has an eye on any of his former assistants."
-}
-```
+After verifying that the Docker container is running locally, and we're seeing prediction outputs in `logs.out`, we are ready to run some end-to-end tests! 
 
-```bash
-{
-  "source": "Boston Globe",
-  "url": "http://www.boston.com/business/articles/2005/01/04/mike_wallace_subpoenaed?rss_id=BostonGlobe--BusinessNews",
-  "title": "Mike Wallace subpoenaed",
-  "description": "Richard Scrushy once sat down to talk with 60 Minutes correspondent Mike Wallace about allegations that Scrushy started a huge fraud while chief executive of rehabilitation giant HealthSouth Corp. Now, Scrushy wants Wallace to do the talking."
-}
-```
+For this part, you will use the prepopulated requests in `data/requests.json` to send traffic to the locally running instance of your prediction service. There are 100 requests in this file, and you should see logs for each of them in `logs.out` in the Docker container as you start sending traffic to the service. 
 
-```bash
-{
-  "source": "Reuters World",
-  "url": "http://www.reuters.com/newsArticle.jhtml?type=worldNewsstoryID=7228962",
-  "title": "Peru Arrests Siege Leader, to Storm Police Post",
-  "description": "LIMA, Peru (Reuters) - Peruvian authorities arrested a former army major who led a three-day uprising in a southern  Andean town and will storm the police station where some of his  200 supporters remain unless they surrender soon, Prime  Minister Carlos Ferrero said on Tuesday."
-}
-```
+We suggest automating this with a simple bash or Python script (check out the Python `requests` library: `https://pypi.org/project/requests/`). 
 
-```bash
-{
-  "source": "The Washington Post",
-  "url": "http://www.washingtonpost.com/wp-dyn/articles/A46063-2005Jan3.html?nav=rss_sports",
-  "title": "Ruffin Fills Key Role",
-  "description": "With power forward Etan Thomas having missed the entire season, reserve forward Michael Ruffin has done well in taking his place."
-}
-```
 
-## [Step 5][Optional] Testing with Pytest
+## [Step 6][Optional] Testing with Pytest
 
 This part is optional. We've built our web application, and containerized it with Docker. But imagine a team of ML engineers and scientists that needs to maintain, improve and scale this service over time. It would be nice to write some tests to ensure we don't regress! 
 
@@ -255,4 +225,54 @@ This part is optional. We've built our web application, and containerized it wit
     (ii) [Testing FastAPI with startup and shutdown events](https://fastapi.tiangolo.com/advanced/testing-events/)
   
   3. Head over to `test_app.py` to get started. As you develop the tests using prompts in this file, you can run `pytest` to run the tests.
+   
+## [Step 7][Optional] Deploying the Docker Container in AWS
 
+This part is optional. In this last step, we will deploy the Dockerized application to a cloud environment using AWS. 
+
+1. AWS Account setup: 
+  
+If you already have an account with AWS configured, feel free to use it and skip this step.  If you don’t have an account already, please set up your account at https://aws.amazon.com/. Make sure to choose your region as `us-west-2`.
+
+You can generate access keys for the root user (you) using this guide: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html. You’ll see something like this in the IAM console: (**Save this carefully for use in Step 4**).
+
+![](https://corise-mlops.s3.us-west-2.amazonaws.com/project3/aws_setup1.png)
+
+
+Install the AWS command line utility tool that lets you programmatically access AWS services from your local machine: https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html 
+
+Configure the AWS command line tool using this guide before you can start using it: https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-quickstart.html. Use the access credentials that you generated in Step 2, and make sure to set the region to `us-west-2`. 
+
+
+2. Create an ECR Repository: 
+
+ECR is an AWS managed service to store and manage Docker images for easy deployment. Using the AWS web console, you can create a new repository in ECR to manage our news classification application. This is a good reference starter guide to ECR if you haven't used it before: https://docs.aws.amazon.com/AmazonECR/latest/userguide/Repositories.html. The ECR repository will look something like this (it's okay if you don't see any images yet, we haven't pushed any!)
+
+![](https://corise-mlops.s3.us-west-2.amazonaws.com/project3/aws_setup2.png)
+
+
+3. Push Docker image to ECR from the command line:
+
+You can click on "View Push Commands" on the top right corner of the above screen to see how to push new Docker images to the ECR repository you just created. All these commands need to be run locally in your Gitpod instance:
+
+(i) Retrieve an authentication token and authenticate your Docker client to your registry:
+```bash 
+aws ecr get-login-password --region <your region> | docker login --username AWS --password-stdin <your aws account id>
+```
+
+(ii) Tag your image so you can push the image to this repository:
+
+```bash
+
+docker tag news-classifier:latest <aws account id>/<ecr repository>:latest
+```
+
+(iii) Push this image to your newly created AWS repository:
+
+```bash
+
+docker push <aws account id>/<ecr repository>:latest
+
+```
+
+4. Download the Docker image to a new EC2 machine and start the service!
