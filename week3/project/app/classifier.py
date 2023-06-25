@@ -72,7 +72,12 @@ class NewsCategoryClassifier:
             ...
         }
         """
-        return {}
+        res = {}
+        predicted = self.pipeline.predict_proba([model_input.description])
+        for c, p in list(zip(self.classes, predicted[0])):
+            res[c] = p
+
+        return res
 
     def predict_label(self, model_input: dict) -> str:
         """
@@ -83,4 +88,4 @@ class NewsCategoryClassifier:
 
         Output format: predicted label for the model input
         """
-        return ""
+        return self.pipeline.predict([model_input.description])[0]
