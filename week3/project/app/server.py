@@ -1,10 +1,11 @@
 import datetime
 import time
 
-from classifier import NewsCategoryClassifier
 from fastapi import FastAPI
 from loguru import logger
 from pydantic import BaseModel
+
+from .classifier import NewsCategoryClassifier
 
 
 class PredictRequest(BaseModel):
