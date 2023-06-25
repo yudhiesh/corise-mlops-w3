@@ -1,9 +1,10 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from loguru import logger
-import datetime, time
+import datetime
+import time
 
 from classifier import NewsCategoryClassifier
+from fastapi import FastAPI
+from loguru import logger
+from pydantic import BaseModel
 
 
 class PredictRequest(BaseModel):
@@ -31,13 +32,13 @@ def startup_event():
     1. Initialize an instance of `NewsCategoryClassifier`.
     2. Load the serialized trained model parameters (pointed to by `MODEL_PATH`) into the NewsCategoryClassifier you initialized.
     3. Open an output file to write logs, at the destimation specififed by `LOGS_OUTPUT_PATH`
-        
+
     Access to the model instance and log file will be needed in /predict endpoint, make sure you
     store them as global variables
     """
-    global classifier, log_file
-    classifier = NewsCategoryClassifier()
-    classifier.load(MODEL_PATH)
+    global model, log_file
+    model = NewsCategoryClassifier()
+    model.load(MODEL_PATH)
     log_file = open(LOGS_OUTPUT_PATH, "a+")
     logger.info("Setup completed")
 
@@ -75,18 +76,19 @@ def predict(request: PredictRequest):
     datetime_now = datetime.datetime.now()
     start_time = time.time()
 
-    predict_proba = classifier.predict_proba(request)
-    predicted_label = classifier.predict_label(request)
+    request_dict = request.dict()
+    predict_proba = model.predict_proba(request_dict)
+    predicted_label = model.predict_label(request_dict)
     response = PredictResponse(scores=predict_proba, label=predicted_label)
 
     log = {
-        'timestamp' : datetime_now.strftime("%Y:%m:%d %H:%M:%S"),
-        'request' : request,
-        'prediction' : response,
-        'latency' : (time.time() - start_time) * 1_000
+        "timestamp": datetime_now.strftime("%Y:%m:%d %H:%M:%S"),
+        "request": request,
+        "prediction": response,
+        "latency": (time.time() - start_time) * 1_000,
     }
     log_file.write(str(log))
-    log_file.write('\n')
+    log_file.write("\n")
     log_file.flush()
 
     return response

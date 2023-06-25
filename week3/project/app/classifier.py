@@ -1,17 +1,18 @@
 from typing import List
 
-from loguru import logger
 import joblib
-
+from loguru import logger
 from sentence_transformers import SentenceTransformer
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
 
 
 class TransformerFeaturizer(BaseEstimator, TransformerMixin):
     def __init__(self):
-        self.sentence_transformer_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+        self.sentence_transformer_model = SentenceTransformer(
+            "sentence-transformers/all-MiniLM-L6-v2"
+        )
 
     #  estimator. Since we don't have to learn anything in the featurizer, this is a no-op
     def fit(self, X, y=None):
@@ -32,14 +33,20 @@ class NewsCategoryClassifier:
         self.classes = None
 
     def _initialize_pipeline(self) -> Pipeline:
-        pipeline = Pipeline([
-            ('transformer_featurizer', TransformerFeaturizer()),
-            ('classifier', LogisticRegression(
-                    multi_class='multinomial',
-                    tol=0.001,
-                    solver='saga',
-            ))
-        ], verbose=self.verbose)
+        pipeline = Pipeline(
+            [
+                ("transformer_featurizer", TransformerFeaturizer()),
+                (
+                    "classifier",
+                    LogisticRegression(
+                        multi_class="multinomial",
+                        tol=0.001,
+                        solver="saga",
+                    ),
+                ),
+            ],
+            verbose=self.verbose,
+        )
         return pipeline
 
     def fit(self, X_train: List, y_train: List) -> None:
@@ -47,7 +54,7 @@ class NewsCategoryClassifier:
         if not self.pipeline:
             self.pipeline = self._initialize_pipeline()
         self.pipeline.fit(X_train, y_train)
-        self.classes = self.pipeline['classifier'].classes_
+        self.classes = self.pipeline["classifier"].classes_
 
     def dump(self, model_path: str) -> None:
         joblib.dump(self.pipeline, model_path)
@@ -56,7 +63,7 @@ class NewsCategoryClassifier:
     def load(self, model_path: str) -> None:
         logger.info(f"Loaded trained model pipeline from: {model_path}")
         self.pipeline = joblib.load(model_path)
-        self.classes = self.pipeline['classifier'].classes_
+        self.classes = self.pipeline["classifier"].classes_
 
     def predict_proba(self, model_input: dict) -> dict:
         """
@@ -72,12 +79,16 @@ class NewsCategoryClassifier:
             ...
         }
         """
-        res = {}
-        predicted = self.pipeline.predict_proba([model_input.description])
-        for c, p in list(zip(self.classes, predicted[0])):
-            res[c] = p
-
-        return res
+        predicted = self.pipeline.predict_proba([model_input["description"]])
+        return {
+            label: score
+            for label, score in list(
+                zip(
+                    self.classes,
+                    predicted[0],
+                )
+            )
+        }
 
     def predict_label(self, model_input: dict) -> str:
         """
@@ -88,4 +99,4 @@ class NewsCategoryClassifier:
 
         Output format: predicted label for the model input
         """
-        return self.pipeline.predict([model_input.description])[0]
+        return self.pipeline.predict([model_input["description"]])[0]
